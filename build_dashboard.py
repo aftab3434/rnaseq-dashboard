@@ -77,7 +77,7 @@ def main():
             "volcano": volcano_payload(mouse_full, "symbol"),
             "table": table_payload(mouse_sig, "symbol"),
             "metrics": {
-                "Genes after filter": f"{len(mouse_full):,}",
+                "Genes tested": f"{mouse_full.padj.notna().sum():,}",
                 "Significant genes": f"{len(mouse_sig):,}",
                 "Up in lactation": f"{int((mouse_sig.log2FoldChange>0).sum()):,}",
                 "Down in lactation": f"{int((mouse_sig.log2FoldChange<0).sum()):,}",
@@ -87,7 +87,7 @@ def main():
             "volcano": volcano_payload(airway_full, "gene_id", airway_symbols),
             "table": table_payload(airway_sig, "gene_id", airway_symbols),
             "metrics": {
-                "Genes after filter": f"{len(airway_full):,}",
+                "Genes tested": f"{airway_full.padj.notna().sum():,}",
                 "Significant genes": f"{len(airway_sig):,}",
                 "Up with dexamethasone": f"{int((airway_sig.log2FoldChange>0).sum()):,}",
                 "Down with dexamethasone": f"{int((airway_sig.log2FoldChange<0).sum()):,}",
@@ -121,7 +121,7 @@ header{padding:28px 32px 12px}h1{margin:0 0 4px;font-size:26px}header p{margin:0
 .card{background:#101826;border:1px solid #232f42;border-radius:12px;padding:14px 20px;min-width:170px}
 .card .v{font-size:24px;font-weight:650}.card .k{color:var(--muted);font-size:13px;margin-top:2px}
 .grid{display:grid;grid-template-columns:1fr;gap:22px}@media(min-width:1100px){.grid{grid-template-columns:1fr 1fr}}
-.box{background:#101826;border:1px solid #232f42;border-radius:12px;padding:16px}
+.box{background:#101826;border:1px solid #232f42;border-radius:12px;padding:16px;overflow-x:auto}
 .box h3{margin:0 0 8px;font-size:16px}.box img{width:100%;border-radius:8px;background:#fff}
 .full{grid-column:1/-1}
 input[type=search]{width:100%;max-width:420px;padding:9px 12px;border-radius:8px;border:1px solid #2c3a52;background:#0d1420;color:var(--ink);margin-bottom:10px}
@@ -144,10 +144,11 @@ statistics. Everything is bundled in this one file - it works offline.</p></head
 
 <div class="panel active" id="p-mouse">
   <div class="cards" id="m-cards"></div>
+  <div class="note" style="margin:-8px 0 14px">"Significant" throughout = adjusted p-value (FDR) &lt; 0.05 AND |log2 fold change| &ge; 1.</div>
   <div class="grid">
     <div class="box full"><h3>Volcano plot - every gene tested (hover for gene names, drag to zoom)</h3><div id="m-volcano" style="height:520px"></div>
       <div class="note">Each dot is one gene. Right of the right dashed line + above the horizontal line = significantly higher in lactation; left side = lower. Grey cloud is a 4,000-point sample of non-significant genes.</div></div>
-    <div class="box"><h3>PCA - samples separate cleanly by stage</h3><img id="m-pca" alt="PCA plot"></div>
+    <div class="box"><h3>PCA - samples group by stage</h3><img id="m-pca" alt="PCA plot"></div>
     <div class="box"><h3>Top 50 genes - expression pattern across samples</h3><img id="m-heat" alt="heatmap"></div>
     <div class="box full"><h3>Pathway enrichment - what the changed genes do</h3><img id="m-enrich" alt="enrichment" style="background:#fff"></div>
     <div class="box full"><h3>All 1,356 significant genes</h3>
@@ -158,9 +159,10 @@ statistics. Everything is bundled in this one file - it works offline.</p></head
 
 <div class="panel" id="p-airway">
   <div class="cards" id="a-cards"></div>
+  <div class="note" style="margin:-8px 0 14px">"Significant" throughout = adjusted p-value (FDR) &lt; 0.05 AND |log2 fold change| &ge; 1.</div>
   <div class="grid">
     <div class="box full"><h3>Volcano plot - dexamethasone vs untreated (4 vs 4)</h3><div id="a-volcano" style="height:520px"></div>
-      <div class="note">The community-standard DESeq2 benchmark dataset with 4 replicates per group. Same statistics as the mouse tab.</div></div>
+      <div class="note">The community-standard DESeq2 benchmark dataset: 4 cell lines, each measured with and without the drug (a paired design, not 8 independent donors). Same statistics as the mouse tab.</div></div>
     <div class="box"><h3>PCA - treatment separates on PC1</h3><img id="a-pca" alt="airway PCA"></div>
     <div class="box full"><h3>All 1,151 significant genes</h3>
       <input type="search" id="a-search" placeholder="Search a gene name, e.g. DUSP1">
@@ -173,9 +175,9 @@ statistics. Everything is bundled in this one file - it works offline.</p></head
   <ul>
     <li><b>What this is:</b> the finished results of an RNA-seq data-analysis project. RNA-seq measures how active every gene is in a sample. This project compares gene activity between two biological states and finds which genes change.</li>
     <li><b>Dataset 1 (mouse mammary):</b> compares breast cells during milk production (lactation) vs late pregnancy. Milk-protein genes switch on; cell-division genes switch off.</li>
-    <li><b>Dataset 2 (human airway):</b> the standard teaching dataset for this method - airway cells treated with a steroid drug (dexamethasone) vs untreated, 4 samples per group.</li>
-    <li><b>Volcano plot:</b> one dot per gene. Far left/right = big change; high up = statistically reliable change. Hover any dot to see the gene.</li>
-    <li><b>PCA plot:</b> each point is one sample. Samples from the same condition clustering together means the data is clean.</li>
+    <li><b>Dataset 2 (human airway):</b> the standard teaching dataset for this method - 4 human airway cell lines, each measured with and without a steroid drug (dexamethasone). A paired design: 4 independent cell lines, not 8 independent people.</li>
+    <li><b>Volcano plot:</b> one dot per gene. Far left/right = big change; high up = strong statistical evidence the change is not random noise. Strong evidence is not the same as proven biological importance. Hover any dot to see the gene.</li>
+    <li><b>PCA plot:</b> each point is one sample. Samples from the same condition clustering together is what we expect when the condition drives large differences - reassuring, but not by itself proof the data is error-free.</li>
     <li><b>Tables:</b> every gene that passed the significance threshold (adjusted p-value &lt; 0.05 and at least 2-fold change). Use the search box.</li>
     <li><b>Honest caveats:</b> the mouse dataset has only 2 samples per group, so its results are a demonstration of the analysis skill set, not strong new biology. The airway dataset (4 per group) is the statistically stronger example. This dashboard presents bundled results from the analysis pipeline; it does not recompute anything or accept new uploads.</li>
   </ul>
