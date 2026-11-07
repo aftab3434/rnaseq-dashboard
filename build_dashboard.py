@@ -77,7 +77,8 @@ def main():
             "volcano": volcano_payload(mouse_full, "symbol"),
             "table": table_payload(mouse_sig, "symbol"),
             "metrics": {
-                "Genes tested": f"{mouse_full.padj.notna().sum():,}",
+                "Genes tested": f"{mouse_full.pvalue.notna().sum():,}",
+                "With adjusted p-values": f"{mouse_full.padj.notna().sum():,}",
                 "Significant genes": f"{len(mouse_sig):,}",
                 "Up in lactation": f"{int((mouse_sig.log2FoldChange>0).sum()):,}",
                 "Down in lactation": f"{int((mouse_sig.log2FoldChange<0).sum()):,}",
@@ -87,7 +88,8 @@ def main():
             "volcano": volcano_payload(airway_full, "gene_id", airway_symbols),
             "table": table_payload(airway_sig, "gene_id", airway_symbols),
             "metrics": {
-                "Genes tested": f"{airway_full.padj.notna().sum():,}",
+                "Genes tested": f"{airway_full.pvalue.notna().sum():,}",
+                "With adjusted p-values": f"{airway_full.padj.notna().sum():,}",
                 "Significant genes": f"{len(airway_sig):,}",
                 "Up with dexamethasone": f"{int((airway_sig.log2FoldChange>0).sum()):,}",
                 "Down with dexamethasone": f"{int((airway_sig.log2FoldChange<0).sum()):,}",
@@ -144,7 +146,7 @@ statistics. Everything is bundled in this one file - it works offline.</p></head
 
 <div class="panel active" id="p-mouse">
   <div class="cards" id="m-cards"></div>
-  <div class="note" style="margin:-8px 0 14px">"Significant" throughout = adjusted p-value (FDR) &lt; 0.05 AND |log2 fold change| &ge; 1.</div>
+  <div class="note" style="margin:-8px 0 14px">"Significant" throughout = adjusted p-value (FDR) &lt; 0.05 AND |log2 fold change| &ge; 1. "Genes tested" = genes DESeq2 computed a p-value for; "With adjusted p-values" = retained after DESeq2 independent filtering.</div>
   <div class="grid">
     <div class="box full"><h3>Volcano plot - every gene tested (hover for gene names, drag to zoom)</h3><div id="m-volcano" style="height:520px"></div>
       <div class="note">Each dot is one gene. Right of the right dashed line + above the horizontal line = significantly higher in lactation; left side = lower. Grey cloud is a 4,000-point sample of non-significant genes.</div></div>
@@ -159,12 +161,12 @@ statistics. Everything is bundled in this one file - it works offline.</p></head
 
 <div class="panel" id="p-airway">
   <div class="cards" id="a-cards"></div>
-  <div class="note" style="margin:-8px 0 14px">"Significant" throughout = adjusted p-value (FDR) &lt; 0.05 AND |log2 fold change| &ge; 1.</div>
+  <div class="note" style="margin:-8px 0 14px">"Significant" throughout = adjusted p-value (FDR) &lt; 0.05 AND |log2 fold change| &ge; 1. "Genes tested" = genes DESeq2 computed a p-value for; "With adjusted p-values" = retained after DESeq2 independent filtering.</div>
   <div class="grid">
     <div class="box full"><h3>Volcano plot - dexamethasone vs untreated (4 vs 4)</h3><div id="a-volcano" style="height:520px"></div>
       <div class="note">The community-standard DESeq2 benchmark dataset: 4 cell lines, each measured with and without the drug (a paired design, not 8 independent donors). Same statistics as the mouse tab.</div></div>
     <div class="box"><h3>PCA - treatment separates on PC1</h3><img id="a-pca" alt="airway PCA"></div>
-    <div class="box full"><h3>All 1,151 significant genes</h3>
+    <div class="box full"><h3>All 1,123 significant genes</h3>
       <input type="search" id="a-search" placeholder="Search a gene name, e.g. DUSP1">
       <div class="wrap"><table id="a-table"></table></div></div>
   </div>
